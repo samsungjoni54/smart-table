@@ -1,1 +1,1 @@
-# sp6-2_smart-table_starter
+https://github.com/samsungjoni54/smart-table
