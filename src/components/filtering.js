@@ -1,41 +1,43 @@
-import {createComparison, defaultRules} from "../lib/compare.js";
+export function initFiltering(elements) {
+    function updateIndexes(elements, indexes) {
+        Object.keys(indexes).forEach(function(elementName) {
+            const indexData = indexes[elementName];
+            const options = Object.values(indexData).map(function(name) {
+                const el = document.createElement('option');
+                el.textContent = name;
+                el.value = name;
+                return el;
+            });
+            elements[elementName].append(...options);
+        });
+    }
 
-// @todo: #4.3 — настроить компаратор
-const compare = createComparison(defaultRules);
-
-export function initFiltering(elements, indexes) {
-    // @todo: #4.1 — заполнить выпадающие списки опциями
-    Object.keys(indexes).forEach((elementName) => {
-        elements[elementName].append(
-            ...Object.values(indexes[elementName]).map(name => {
-                const option = document.createElement('option');
-                option.value = name;
-                option.textContent = name;
-                return option;
-            })
-        )
-    });
-
-    return (data, state, action) => {
-        // @todo: #4.2 — обработать очистку поля
+    function applyFiltering(query, state, action) {
         if (action && action.name === 'clear') {
             const input = action.parentElement.querySelector('input');
             input.value = '';
             state[action.dataset.field] = '';
         }
 
-        // @todo: #4.5 — отфильтровать данные используя компаратор
-        const totalFrom = parseFloat(state.totalFrom);
-        const totalTo = parseFloat(state.totalTo);
+        const filter = {};
+        Object.keys(elements).forEach(function(key) {
+            const element = elements[key];
+            if (element) {
+                const tag = element.tagName;
+                if ((tag === 'INPUT' || tag === 'SELECT') && element.value) {
+                    filter[`filter[${element.name}]`] = element.value;
+                }
+            }
+        });
 
-        const filterState = {
-            ...state,
-            total: [
-                isNaN(totalFrom) ? '' : totalFrom,
-                isNaN(totalTo) ? '' : totalTo,
-            ],
-        };
-
-        return data.filter(row => compare(row, filterState));
+        if (Object.keys(filter).length > 0) {
+            return Object.assign({}, query, filter);
+        }
+        return query;
     }
+
+    return {
+        updateIndexes: updateIndexes,
+        applyFiltering: applyFiltering
+    };
 }
